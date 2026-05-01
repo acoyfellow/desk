@@ -1,0 +1,19 @@
+{
+  "name": "desk-fab-local",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "SEQ_DO",  "class_name": "SeqRoom" },
+      { "name": "AUTH_DO", "class_name": "AuthRoom" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["SeqRoom", "AuthRoom"] }
+  ],
+  "dev": {
+    "port": 8911,
+    "ip": "127.0.0.1"
+  }
+}

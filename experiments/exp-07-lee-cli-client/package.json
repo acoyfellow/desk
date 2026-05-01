@@ -1,0 +1,15 @@
+{
+  "name": "lee-cli",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke": "FAB_LOCAL=1 bun src/lee-cli.ts smoke",
+    "lee":   "bun src/lee-cli.ts"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.10"
+  }
+}

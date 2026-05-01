@@ -1,0 +1,21 @@
+{
+  "name": "desk-fabric-exp08",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "APP_RUNNER", "class_name": "AppRunner" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["AppRunner"] }
+  ],
+  "worker_loaders": [
+    { "binding": "LOADER" }
+  ],
+  "dev": {
+    "port": 8912,
+    "ip": "127.0.0.1"
+  }
+}

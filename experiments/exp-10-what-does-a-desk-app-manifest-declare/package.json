@@ -1,0 +1,13 @@
+{
+  "name": "exp-10-manifest",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate-counter": "bun parse.ts apps/counter.md",
+    "validate-pet": "bun parse.ts apps/pet.md",
+    "validate-all": "bun parse.ts apps/counter.md && bun parse.ts apps/pet.md"
+  },
+  "dependencies": {
+    "yaml": "^2.5.0"
+  }
+}

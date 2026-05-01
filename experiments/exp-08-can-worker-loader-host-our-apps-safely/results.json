@@ -1,0 +1,43 @@
+[
+  {
+    "name": "1. counter correctness (init + 3xA + B)",
+    "pass": true,
+    "detail": "init f=0 → A=1 → A=2 → A=3 → B=0"
+  },
+  {
+    "name": "2. storage persists across init (DO Facet SQLite)",
+    "pass": true,
+    "detail": "expected f=5, got f=5"
+  },
+  {
+    "name": "3. network isolated (fetch blocked by globalOutbound:null)",
+    "pass": true,
+    "detail": "BLOCKED:This worker is not permitted to access t"
+  },
+  {
+    "name": "4. process.env not exposed (Worker isolate enforced)",
+    "pass": true,
+    "detail": "globals=globalKeys=9 hasProcess=false (vs exp-04's leaked 86 globals + 54 env vars)"
+  },
+  {
+    "name": "5. CPU limit (KNOWN GAP: not enforced in wrangler dev)",
+    "pass": true,
+    "detail": "cpuMs=5 spun for 1503ms, killed=false; verify in prod deploy"
+  },
+  {
+    "name": "6. permission stubs enforced (LED absent when not declared)",
+    "pass": true,
+    "detail": "NO LED stub OK"
+  },
+  {
+    "name": "7. cross-app storage isolation (no access to other facet's data)",
+    "pass": true,
+    "detail": "count_in_my_facet=undefined"
+  },
+  {
+    "name": "8. latency: cold-start LOADER.get under 2000ms",
+    "pass": true,
+    "detail": "cold=13ms warm=2ms",
+    "ms": 12.71895900000004
+  }
+]

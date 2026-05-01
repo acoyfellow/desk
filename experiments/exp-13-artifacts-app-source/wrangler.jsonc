@@ -1,0 +1,23 @@
+{
+  "name": "desk-fabric-exp13",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "APP_RUNNER", "class_name": "AppRunner" },
+      { "name": "MCP_OBJECT", "class_name": "DeskMcp" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["AppRunner"] },
+    { "tag": "v2", "new_sqlite_classes": ["DeskMcp"] }
+  ],
+  "worker_loaders": [
+    { "binding": "LOADER" }
+  ],
+  "dev": {
+    "port": 8913,
+    "ip": "0.0.0.0"
+  }
+}

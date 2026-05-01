@@ -1,0 +1,17 @@
+{
+  "name": "desk-fabric-exp08",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bunx wrangler dev",
+    "test": "bun src/run.ts"
+  },
+  "dependencies": {
+    "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240620.0",
+    "wrangler": "^4.0.0",
+    "typescript": "^5.5.0"
+  }
+}

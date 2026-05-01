@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "id": "counter",
+    "name": "Counter",
+    "version": "0.1.0",
+    "permissions": [],
+    "buttons": { "a": "inc", "b": "reset" }
+  },
+  "state": { "count": 0 },
+  "handlers": {
+    "init": "return render(state);",
+    "inc":  "state.count += 1; return render(state);",
+    "reset":"state.count = 0; return render(state);",
+    "render": "return { f: state.count, ops: [['clr','black'],['bnr','COUNTER','orange'],['txt',4,30,'value:','gray'],['txt',30,80,String(state.count),'white',true],['txt',4,200,'A: +1','gray'],['txt',4,220,'B: reset','gray']] };"
+  }
+}

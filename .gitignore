@@ -1,0 +1,64 @@
+# Dependencies / package manager caches
+node_modules/
+
+# Cloudflare / Wrangler local state and secrets
+.wrangler/
+.dev.vars
+.dev.vars.*
+wrangler.local.toml
+
+# Environment files / local credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cert
+*token*
+*secret*
+*credential*
+
+# OS/editor noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs / runtime output
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs / caches
+dist/
+build/
+.cache/
+.turbo/
+__pycache__/
+*.pyc
+
+# Generated lockfiles from local experiment installs; keep package manifests as source of truth here
+bun.lock
+package-lock.json
+
+# Per-experiment scratch outputs (RESULT.md is the canonical artifact)
+experiments/**/exp*_output.json
+
+# Firmware blobs are not source and can contain embedded cert/key marker strings.
+# Link to upstream firmware releases from docs instead of committing binaries.
+*.bin
+*.uf2
+*.hex
+
+# Cached upstream Cloudflare docs (it's their content, not ours to publish).
+# Local agents can re-fetch via developers.cloudflare.com/<product>/llms.txt;
+# see .context/INVARIANTS.md "I-4. Read docs before touching primitives".
+.context/cf-docs-snapshot/
+
+# Pre-existing hardware repo archive — preserved on local disk for the
+# bootstrap history but not part of the public repo.
+device/.hardware-context-archive/
