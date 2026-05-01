@@ -1,6 +1,6 @@
 # NOW
 
-**Last touched:** 2026-05-01 (audio shipment: seq op + tunes app + real volume knob)
+**Last touched:** 2026-05-01 (browser frame renderer graduated: exp-05b)
 
 ## Locked product identity
 
@@ -22,6 +22,7 @@ exposes:
 | Endpoint | What |
 |---|---|
 | `GET /healthz` | unauth liveness |
+| `GET /viewer` | unauth — browser frame renderer (operator pastes bearer in setup form or URL hash) |
 | `GET /list` | apps + `pending_elicit` + `pending_notify` + `volume_target` (bearer auth) |
 | `POST /run?app=...&action=...` | render an app frame (bearer auth) |
 | `POST /mcp` | MCP server, McpAgent.serve("/mcp") (bearer auth) |
@@ -52,7 +53,8 @@ D1 transport (WS hibernation), D2 auth (presence-bound JWT, F-1+F-2 fixed),
 D3 crypto (X25519+AES-256-CTR+HMAC-SHA256), D6 wire protocol (app DO emits
 frames), D7 app format (markdown frontmatter + JS body), D8 runtime (Worker
 Loader, 13ms cold start), D9 AppSource (Artifacts via isomorphic-git),
-**D10 MCP (McpAgent.serve('/mcp') on the fabric Worker)**.
+D10 MCP (McpAgent.serve('/mcp') on the fabric Worker), **D11 protocol
+portability (browser viewer ⇔ M5)**, **D12 bearer-in-hash for v0 viewer auth**.
 
 ## Hard rules
 
@@ -62,21 +64,25 @@ Loader, 13ms cold start), D9 AppSource (Artifacts via isomorphic-git),
 
 ## Up next (priority)
 
-1. **exp-19: device firmware OTA** (proposal in
+1. **exp-09: QuickJS-WASM sandbox.** Already-queued alternative app-host
+   runtime. Picked up alongside exp-05b for "the most fun" path. Compares
+   Worker Loader vs in-process QuickJS isolation on the same counter
+   workload, measures the 5 exp-04 attacks. Unblocks live-coded apps in
+   the prompt→app loop.
+2. **exp-19: device firmware OTA** (proposal in
    `experiments/exp-19-can-firmware-be-OTA-from-artifacts/`). Closes the
-   loop on agent-driven firmware fixes by pushing `desk-rt.py` through
-   the same Artifacts pipeline as apps.
-2. **Public-release polish.** LICENSE, scrub of operator-personal
-   identifiers, restructuring `experiments/exp-13-...` into a top-level
-   `fabric/` directory for clarity, and an end-to-end install doc that a
-   new operator can follow without help.
-3. **Per-device routing.** The singleton AppRunner means one wrist. Multi-
-   device needs device IDs in routing keys. Important once a second
-   operator (or a second M5 in one home) shows up.
-4. **OAuth on `/mcp`.** v1 uses bearer; a public app store would need
-   OAuth 2.1.
-5. **Pet's setAlarm replacement** (F-10) — supervisor-mediated alarms so
+   loop on agent-driven firmware fixes.
+3. **Public-release polish.** LICENSE shipped (MIT). Still need: rename
+   `experiments/exp-13-…/` to top-level `fabric/`, end-to-end install
+   doc that a new operator can follow without help.
+4. **Per-device routing.** The singleton AppRunner means one wrist. Multi-
+   device needs device IDs in routing keys.
+5. **OAuth on `/mcp` and `/viewer`.** v1 uses bearer; a public app store
+   would need OAuth 2.1. Both surfaces need it before going public.
+6. **Pet's setAlarm replacement** (F-10) — supervisor-mediated alarms so
    pet's decay can run without polling on init.
+7. **F-14/F-15 viewer hygiene** — fix the rapid-B input-swallow and
+   active-app external-state-sync gaps from exp-05b's findings.
 
 ## Stopping conditions
 

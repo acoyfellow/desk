@@ -1,0 +1,352 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>desk viewer</title>
+<style>
+  html,body{margin:0;background:#111;color:#9aa;font:13px/1.4 ui-monospace,monospace;height:100%}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;box-sizing:border-box}
+  canvas{image-rendering:pixelated;background:#000;border:2px solid #333;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+  #app{display:flex;gap:24px;align-items:center}
+  .pad{display:flex;flex-direction:column;gap:10px;min-width:180px}
+  .pad button{background:#222;color:#ddd;border:1px solid #444;border-radius:6px;padding:10px 14px;cursor:pointer;font:13px ui-monospace}
+  .pad button:hover{background:#2a2a2a}
+  .pad small{color:#666}
+  #log{font-size:11px;color:#777;max-width:340px;height:18px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  #setup{padding:30px;background:#1a1a1a;border:1px solid #333;border-radius:8px;max-width:480px}
+  input{width:100%;font:13px ui-monospace;background:#000;color:#ddd;border:1px solid #333;padding:8px;border-radius:4px;box-sizing:border-box}
+  label{display:block;margin-top:14px;color:#aaa}
+  button.go{margin-top:16px;background:#246;color:#fff;border:none;padding:10px 20px;border-radius:4px;cursor:pointer}
+  h1{margin:0 0 6px;font:600 18px/1.2 ui-monospace,monospace;color:#fff}
+  p{margin:0;color:#888}
+</style>
+
+<div id="setup" hidden>
+  <h1>desk viewer</h1>
+  <p>Connect a browser tab to your desk fabric Worker.</p>
+  <label>Fabric URL <small>(e.g. https://desk-fabric.workers.dev)</small>
+    <input id="url" placeholder="https://...workers.dev"></label>
+  <label>Bearer token <small>(DESK_DEVICE_TOKEN)</small>
+    <input id="tok" type="password"></label>
+  <button class="go" onclick="connect()">connect</button>
+</div>
+
+<div id="app" hidden>
+  <canvas id="c" width="135" height="240"></canvas>
+  <div class="pad">
+    <button onmousedown="press('a')" onmouseup="release('a')" onmouseleave="release('a')">A</button>
+    <button onclick="press('b',true)">B</button>
+    <small>or: a / b / shift-a (long)</small>
+    <small>click canvas: tap-zone A/B</small>
+    <small id="log"></small>
+  </div>
+</div>
+
+<script>
+// ── desk frame renderer for the browser ──────────────────────────────
+// HTTPS-poll surface mirror of the M5 firmware. Same fabric endpoints.
+// Renders ops vocabulary: clr bnr txt rect fill bmp spr buz seq.
+// (led ignored — no LED on a browser tab.)
+
+// 96 ASCII glyphs, 8x16, 16 bytes/char, base64 of vga1_8x16.
+const FONT_B64 = "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";
+const FONT = Uint8Array.from(atob(FONT_B64), c=>c.charCodeAt(0));
+const FW = 8, FH = 16, FFIRST = 0x20, FLAST = 0x7f;
+
+// rgb565 names → CSS hex, matched against stick.py's stock colors.
+const COL = {
+  black:"#000", white:"#fff", red:"#f80", green:"#0f4", blue:"#08f",
+  cyan:"#0ff", magenta:"#f0f", yellow:"#ff0",
+  orange:"#ff8c00", gray:"#787878", dim:"#3c3c3c",
+};
+function color(c){
+  if (typeof c !== "string") return "#fff";
+  if (c[0] === "#") return c;
+  return COL[c] || "#fff";
+}
+
+// ── canvas ──
+const c = document.getElementById("c");
+const cx = c.getContext("2d");
+const W = 135, H = 240;
+const SCALE = 2; // visual upscale; the canvas itself is 135x240 internally.
+c.style.width = (W*SCALE)+"px"; c.style.height = (H*SCALE)+"px";
+
+function clr(c2){ cx.fillStyle = color(c2); cx.fillRect(0,0,W,H); }
+function rect(x,y,w,h,c2){ cx.strokeStyle = color(c2); cx.lineWidth = 1;
+  cx.strokeRect(x+0.5, y+0.5, w-1, h-1); }
+function fill(x,y,w,h,c2){ cx.fillStyle = color(c2); cx.fillRect(x,y,w,h); }
+function bnr(s,c2){
+  fill(0,0,W,20, c2 || "orange");
+  textAt(centerX(s||"",1), 2, s||"", "black", 1);
+}
+
+function glyph(ch, x, y, fg, scale){
+  const code = ch.charCodeAt(0);
+  if (code < FFIRST || code > FLAST) return;
+  const off = (code - FFIRST) * FH;
+  cx.fillStyle = color(fg);
+  for (let row = 0; row < FH; row++){
+    const b = FONT[off + row];
+    for (let col = 0; col < FW; col++){
+      if (b & (0x80 >> col)){
+        cx.fillRect(x + col*scale, y + row*scale, scale, scale);
+      }
+    }
+  }
+}
+function textAt(x, y, s, fg, big){
+  const scale = big ? 2 : 1;
+  for (let i = 0; i < s.length; i++){
+    glyph(s[i], x + i*FW*scale, y, fg, scale);
+  }
+}
+function centerX(s, scale){
+  const w = s.length * FW * (scale||1);
+  return Math.max(0, ((W - w) >> 1));
+}
+
+// 1-bit packed bitmap, hex.  ["bmp", x, y, w, h, color, hexbits]
+function bmp(x, y, w, h, c2, hex){
+  const bytes = [];
+  for (let i = 0; i < hex.length; i += 2)
+    bytes.push(parseInt(hex.slice(i, i+2), 16));
+  cx.fillStyle = color(c2);
+  const bpr = (w + 7) >> 3;
+  for (let r = 0; r < h; r++){
+    for (let cc = 0; cc < w; cc++){
+      const b = bytes[r*bpr + (cc>>3)];
+      if (b & (0x80 >> (cc & 7))) cx.fillRect(x+cc, y+r, 1, 1);
+    }
+  }
+}
+
+// colored sprite. ["spr", x, y, scale, rows, palette]
+function spr(x, y, scale, rows, palette){
+  const s = Math.max(1, Math.min(12, scale|0));
+  for (let yy = 0; yy < rows.length; yy++){
+    const row = String(rows[yy]);
+    for (let xx = 0; xx < row.length; xx++){
+      const ch = row[xx];
+      if (ch === " " || ch === "." || ch === "0") continue;
+      if (palette[ch]){
+        cx.fillStyle = color(palette[ch]);
+        cx.fillRect(x + xx*s, y + yy*s, s, s);
+      }
+    }
+  }
+}
+
+// ── audio: piezo simulation via Web Audio API ──
+let actx = null;
+function actxGet(){
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  return actx;
+}
+async function tone(freq, ms){
+  if (!freq) return new Promise(r => setTimeout(r, ms));
+  const a = actxGet();
+  const osc = a.createOscillator();
+  const gain = a.createGain();
+  osc.frequency.value = freq;
+  osc.type = "square"; // chiptuney
+  gain.gain.value = 0.05; // quiet by default
+  osc.connect(gain); gain.connect(a.destination);
+  osc.start();
+  await new Promise(r => setTimeout(r, ms));
+  osc.stop();
+}
+async function seq(notes, gap){
+  for (const n of notes){
+    await tone(n[0], n[1]);
+    if (gap) await new Promise(r => setTimeout(r, gap));
+  }
+}
+
+// ── frame dispatcher ──
+async function render(frame){
+  if (!frame || !frame.ops) return;
+  // Pass 1: synchronous draw ops (everything except buz/seq).
+  for (const op of frame.ops){
+    const t = op[0];
+    try {
+      if      (t === "clr")  clr(op[1] || "black");
+      else if (t === "bnr")  bnr(op[1], op[2]);
+      else if (t === "txt")  textAt(op[1], op[2], String(op[3]), op[4] || "white", !!op[5]);
+      else if (t === "rect") rect(op[1], op[2], op[3], op[4], op[5]);
+      else if (t === "fill") fill(op[1], op[2], op[3], op[4], op[5]);
+      else if (t === "bmp")  bmp(op[1], op[2], op[3], op[4], op[5], op[6]);
+      else if (t === "spr")  spr(op[1], op[2], op[3], op[4], op[5]);
+      else if (t === "led")  { /* no-op in browser */ }
+    } catch(e){ console.warn("[render]", op, e); }
+  }
+  // Pass 2: audio ops fire async (don't block input loop).
+  for (const op of frame.ops){
+    if (op[0] === "buz") tone(op[1], op[2]);
+    else if (op[0] === "seq") seq(op[1], op[2] || 10);
+  }
+}
+
+// ── transport: HTTPS poll, mirroring the M5 ──
+let BASE = null, TOKEN = null;
+let inApp = null;
+let dockApps = [];
+let dockIdx = 0;
+let pollTimer = null;
+let lastFrameSig = null;
+
+const log = (m) => { document.getElementById("log").textContent = m; };
+
+function authHeaders(){
+  return { "Authorization": "Bearer " + TOKEN };
+}
+
+async function fetchList(){
+  try {
+    const r = await fetch(BASE + "/list", { headers: authHeaders() });
+    if (!r.ok) { log("list: HTTP "+r.status); return null; }
+    return await r.json();
+  } catch(e){ log("list: " + e.message); return null; }
+}
+
+async function runApp(app, action, input){
+  let url = BASE + "/run?app=" + encodeURIComponent(app) + "&action=" + action;
+  if (input) url += "&input=" + encodeURIComponent(JSON.stringify(input));
+  try {
+    const r = await fetch(url, { method: "POST", headers: authHeaders() });
+    if (!r.ok) { log("run: HTTP "+r.status); return null; }
+    return await r.json();
+  } catch(e){ log("run: " + e.message); return null; }
+}
+
+function renderDock(){
+  clr("black");
+  fill(0, 0, W, 24, "black");
+  textAt(8, 5, "DESK", "orange");
+  fill(0, 24, W, 1, "orange");
+  if (!dockApps.length){
+    textAt(centerX("no apps", 1), 80, "no apps", "gray", 0);
+    return;
+  }
+  const ROW_Y = 38, ROW_H = 18;
+  for (let i = 0; i < dockApps.length; i++){
+    const y = ROW_Y + i*ROW_H;
+    const hi = i === dockIdx;
+    const pre = hi ? "> " : "  ";
+    textAt(4, y, pre + dockApps[i].id.slice(0,12),
+           hi ? "orange" : "gray", 0);
+  }
+  textAt(4, 200, "A: open", "dim");
+  textAt(4, 218, "B: next", "dim");
+}
+
+async function refreshDock(){
+  const d = await fetchList();
+  if (!d) return;
+  // Surface notify/elicit takeover by switching to the inbox app, mirror M5.
+  if ((d.pending_elicit || d.pending_notify) && inApp == null){
+    inApp = "inbox";
+    const f = await runApp("inbox", "init");
+    if (f && f.frame) render(f.frame);
+    return;
+  }
+  dockApps = d.apps || [];
+  if (dockIdx >= dockApps.length) dockIdx = Math.max(0, dockApps.length - 1);
+  if (inApp == null) renderDock();
+}
+
+// ── input ──
+let aDown = null;
+function press(id, oneShot){
+  if (id === "a"){ aDown = Date.now(); }
+  else if (id === "b"){ handleB(); }
+  if (oneShot && id === "a") release("a");
+}
+async function release(id){
+  if (id === "a" && aDown != null){
+    const held = Date.now() - aDown;
+    aDown = null;
+    handleA(held > 800 ? "long" : "down");
+  }
+}
+async function handleA(phase){
+  if (inApp == null){
+    // dock: open highlighted app
+    if (!dockApps.length) return;
+    inApp = dockApps[dockIdx].id;
+    log("opening "+inApp);
+    const f = await runApp(inApp, "init");
+    if (f && f.frame) render(f.frame);
+  } else {
+    log("A "+phase+" → "+inApp);
+    const f = await runApp(inApp, "input", {kind:"btn",id:"a",phase});
+    if (f && f.frame) render(f.frame);
+  }
+}
+function handleB(){
+  if (inApp == null){
+    dockIdx = (dockIdx + 1) % Math.max(1, dockApps.length);
+    renderDock();
+  } else {
+    inApp = null;
+    log("back to dock");
+    refreshDock();
+  }
+}
+
+// keyboard
+window.addEventListener("keydown", (e) => {
+  if (e.repeat) return;
+  if (e.key === "a" || e.key === "A"){
+    if (e.shiftKey) { aDown = Date.now() - 900; release("a"); } // simulate long
+    else press("a");
+  } else if (e.key === "b" || e.key === "B"){ handleB(); }
+});
+window.addEventListener("keyup", (e) => {
+  if (e.key === "a" || e.key === "A") release("a");
+});
+
+// click-zones on canvas: bottom 3rd = A, sides = B
+c.addEventListener("mousedown", (e) => {
+  const r = c.getBoundingClientRect();
+  const y = (e.clientY - r.top) / r.height;
+  if (y > 0.66) press("a");
+  else handleB();
+});
+c.addEventListener("mouseup", () => release("a"));
+
+// ── boot ──
+function connect(){
+  const u = document.getElementById("url").value.trim().replace(/\/$/, "");
+  const t = document.getElementById("tok").value.trim();
+  if (!u || !t){ alert("need both"); return; }
+  BASE = u; TOKEN = t;
+  sessionStorage.setItem("desk_url", u);
+  sessionStorage.setItem("desk_tok", t);
+  // also push to URL hash so bookmarks work
+  location.hash = "url="+encodeURIComponent(u)+"&token="+encodeURIComponent(t);
+  show();
+}
+function show(){
+  document.getElementById("setup").hidden = true;
+  document.getElementById("app").hidden = false;
+  refreshDock();
+  pollTimer = setInterval(refreshDock, 2000);
+}
+
+// hash > sessionStorage > setup form
+function init(){
+  const h = location.hash.slice(1);
+  const params = Object.fromEntries(new URLSearchParams(h));
+  BASE = params.url || sessionStorage.getItem("desk_url");
+  TOKEN = params.token || sessionStorage.getItem("desk_tok");
+  if (BASE && TOKEN){
+    if (params.url) sessionStorage.setItem("desk_url", BASE);
+    if (params.token) sessionStorage.setItem("desk_tok", TOKEN);
+    show();
+  } else {
+    document.getElementById("setup").hidden = false;
+    document.getElementById("url").value = sessionStorage.getItem("desk_url") || "";
+    document.getElementById("tok").value = sessionStorage.getItem("desk_tok") || "";
+  }
+}
+init();
+</script>

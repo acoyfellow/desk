@@ -16,6 +16,9 @@
   "worker_loaders": [
     { "binding": "LOADER" }
   ],
+  "rules": [
+    { "type": "Text", "globs": ["**/*.html"], "fallthrough": true }
+  ],
   "dev": {
     "port": 8913,
     "ip": "0.0.0.0"

@@ -10,6 +10,9 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { ArtifactsAppSource } from "./ArtifactsAppSource";
 import type { AppFile } from "./AppSource";
+// Inlined at build-time via wrangler's Text rule (see wrangler.jsonc).
+// Served at GET /viewer; the operator can drive desk from any browser.
+import VIEWER_HTML from "./viewer.html";
 
 export interface Env {
   APP_RUNNER: DurableObjectNamespace<AppRunner>;
@@ -665,6 +668,21 @@ export default {
 
     // Public, no-auth: liveness probe only.
     if (url.pathname === "/healthz") return new Response("ok\n");
+
+    // Public, no-auth: viewer (browser desk client). The page itself is
+    // fine to serve unauthenticated — it expects the operator to paste
+    // a bearer token into the setup form (or arrive with one in the URL
+    // hash, which never reaches the server). All actual data calls from
+    // the viewer go through the same bearer-gated endpoints below.
+    if (url.pathname === "/viewer" || url.pathname === "/viewer/") {
+      return new Response(VIEWER_HTML, {
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+          // Cheap caching; bump v=N if the inlined viewer changes.
+          "Cache-Control": "public, max-age=300",
+        },
+      });
+    }
 
     // Everything else requires the device token.
     if (!authOk(req, env)) {
