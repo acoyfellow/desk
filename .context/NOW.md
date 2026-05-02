@@ -10,7 +10,7 @@ future tenant of desk, not desk's reason for existing.
 
 A second compelling vector is dogfood-driven: **desk's MCP server lets
 any MCP-capable agent in the operator's toolchain (pi, opencode, hermes,
-Claude Desktop, Cursor) use the wrist for human-in-the-loop interaction.**
+Claude Desktop, Cursor) use the device for human-in-the-loop interaction.**
 The "build apps on device" forcing function still holds; the MCP
 integration is the killer demo for everyone but the operator.
 
@@ -30,8 +30,8 @@ exposes:
 ### MCP tools
 
 - **`desk.echo(text)`** — sanity check
-- **`desk.ask(question, options[], timeout_seconds)`** — yank wrist screen, return user choice
-- **`desk.inbox(text, level)`** — post a non-blocking notification to wrist
+- **`desk.ask(question, options[], timeout_seconds)`** — yank device screen, return user choice
+- **`desk.inbox(text, level)`** — post a non-blocking notification to device
 - **`desk.observe(title, body?, repo?, phase?, level?, ttl_seconds?)`** — ambient agent activity status
 - **`desk.set_volume(level)`** — 0=mute, 1=quiet, 2=loud (persists on device)
 
@@ -75,7 +75,7 @@ portability (browser viewer ⇔ M5)**, **D12 bearer-in-hash for v0 viewer auth**
 3. **Public-release polish.** LICENSE shipped (MIT). Still need: rename
    `experiments/exp-13-…/` to top-level `fabric/`, end-to-end install
    doc that a new operator can follow without help.
-4. **Per-device routing.** The singleton AppRunner means one wrist. Multi-
+4. **Per-device routing.** The singleton AppRunner means one device. Multi-
    device needs device IDs in routing keys.
 5. **OAuth on `/mcp` and `/viewer`.** v1 uses bearer; a public app store
    would need OAuth 2.1. Both surfaces need it before going public.

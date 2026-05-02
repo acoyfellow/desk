@@ -2,13 +2,13 @@
 
 ## Reporting a vulnerability
 
-desk is a personal project that authorizes AI agents to drive a wrist
+desk is a personal project that authorizes AI agents to drive a device
 device the operator wears. A class of vulnerability that matters here
 includes:
 
 - Anything that lets a third party (a malicious MCP client, an agent
   with a stolen bearer token, an attacker on the operator's network)
-  cause the wrist device to display content or take actions the
+  cause the device to display content or take actions the
   operator did not consent to.
 - Anything that exposes operator credentials (the device bearer token,
   Cloudflare deploy/Artifacts tokens) outside the operator's
@@ -52,7 +52,7 @@ address on the GitHub profile linked from the repo.
 
 - Anything an agent given the bearer token does using documented
   MCP tools — that's the design.
-- The fact that `desk.ask` interrupts whatever is on the wrist —
+- The fact that `desk.ask` interrupts whatever is on the device —
   it's the entire point.
 - The dock auto-refresh polling endpoints with the bearer (this is
   how the device works).

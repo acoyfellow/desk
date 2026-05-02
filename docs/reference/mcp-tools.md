@@ -28,11 +28,11 @@ Sanity check. Returns `desk says: <text>`.
 | `text` | string | what to echo back |
 
 Use this to verify your MCP client is wired correctly before
-trying anything that affects the wrist.
+trying anything that affects the device.
 
 ### `desk.ask(question, options, timeout_seconds?)`
 
-**Blocking.** Yanks the wrist screen to the inbox surface,
+**Blocking.** Yanks the device screen to the inbox surface,
 displays `question`, waits for the user to press a button, and
 returns their choice.
 
@@ -54,18 +54,18 @@ Or, on timeout:
 { "isError": true, "content": [{ "type": "text", "text": "timeout after 60s; user did not answer" }] }
 ```
 
-Latency on the wrist: takeover appears within ~10s
+Latency on the device: takeover appears within ~10s
 (dock-refresh poll cadence) after the call hits the fabric.
 
 ### `desk.inbox(text, level?)`
 
-**Non-blocking.** Posts a notification to the wrist. The wrist
+**Non-blocking.** Posts a notification to the device. The device
 takes over to display it on the next poll; the user dismisses
 with A.
 
 | Field | Type | Notes |
 |---|---|---|
-| `text` | string ≤ 200 chars | wraps on the wrist; longer is truncated |
+| `text` | string ≤ 200 chars | wraps on the device; longer is truncated |
 | `level` | `"info"` \| `"warn"` \| `"error"`, default `"info"` | controls text color (white/yellow/red) |
 
 Returns immediately with `{ ok: true, id, queued: text }`.
@@ -74,7 +74,7 @@ Newest first. Queue caps at 50; older notifications are dropped.
 
 ### `desk.observe(title, body?, repo?, phase?, level?, ttl_seconds?)`
 
-**Non-blocking.** Updates the wrist with ambient agent
+**Non-blocking.** Updates the device with ambient agent
 activity. Use for "showing what an agent is doing" without
 asking for input. Replaces previous observation; one slot only.
 
@@ -87,11 +87,11 @@ asking for input. Replaces previous observation; one slot only.
 | `level` | `"info"` \| `"warn"` \| `"error"`, default `"info"` | |
 | `ttl_seconds` | number 5..3600, default 120 | auto-expires after this |
 
-The wrist picks up changes on its next dock-refresh poll.
+The device picks up changes on its next dock-refresh poll.
 
 ### `desk.set_volume(level)`
 
-Set the wrist buzzer volume. Persists across reboots; the
+Set the device buzzer volume. Persists across reboots; the
 device picks up the change on its next dock-refresh poll
 (~10s).
 
@@ -154,4 +154,4 @@ See `demos/agent-elicit.ts` for a Bun script that drives
 
 - [How to connect an agent](../how-to/connect-an-agent.md)
 - [HTTP endpoints reference](http-endpoints.md) — what the MCP server runs alongside
-- [Frame protocol reference](frame-protocol.md) — what `desk.ask` renders on the wrist
+- [Frame protocol reference](frame-protocol.md) — what `desk.ask` renders on the device

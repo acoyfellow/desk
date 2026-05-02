@@ -104,6 +104,48 @@ function centerX(s, scale){
   return Math.max(0, ((W - w) >> 1));
 }
 
+// ── 5x7 chunky font (ported from living-artifact's hand-rolled glyphs).
+// Uppercase + digits + a few symbols. Drawn via fillRect at integer scale,
+// matches the M5's stick.py text5x7 pixel-for-pixel.
+const F5 = {
+  " ":[0,0,0,0,0,0,0],"-":[0,0,0,31,0,0,0],">":[16,8,4,2,4,8,16],".":[0,0,0,0,0,12,12],
+  "0":[14,17,19,21,25,17,14],"1":[4,12,4,4,4,4,14],"2":[14,17,1,2,4,8,31],"3":[30,1,1,14,1,1,30],
+  "4":[2,6,10,18,31,2,2],"5":[31,16,30,1,1,17,14],"6":[6,8,16,30,17,17,14],"7":[31,1,2,4,8,8,8],
+  "8":[14,17,17,14,17,17,14],"9":[14,17,17,15,1,2,12],
+  "A":[14,17,17,31,17,17,17],"B":[30,17,17,30,17,17,30],"C":[14,17,16,16,16,17,14],"D":[30,17,17,17,17,17,30],
+  "E":[31,16,16,30,16,16,31],"F":[31,16,16,30,16,16,16],"G":[14,17,16,23,17,17,15],"H":[17,17,17,31,17,17,17],
+  "I":[14,4,4,4,4,4,14],"J":[7,2,2,2,18,18,12],"K":[17,18,20,24,20,18,17],"L":[16,16,16,16,16,16,31],
+  "M":[17,27,21,21,17,17,17],"N":[17,25,21,19,17,17,17],"O":[14,17,17,17,17,17,14],"P":[30,17,17,30,16,16,16],
+  "Q":[14,17,17,17,21,18,13],"R":[30,17,17,30,20,18,17],"S":[15,16,16,14,1,1,30],"T":[31,4,4,4,4,4,4],
+  "U":[17,17,17,17,17,17,14],"V":[17,17,17,17,17,10,4],"W":[17,17,17,21,21,21,10],"X":[17,17,10,4,10,17,17],
+  "Y":[17,17,10,4,4,4,4],"Z":[31,1,2,4,8,16,31],
+};
+function text5x7(x, y, s, fg, scale){
+  scale = Math.max(1, scale|0);
+  cx.fillStyle = color(fg);
+  s = String(s).toUpperCase();
+  for (const ch of s){
+    const rows = F5[ch] || F5[" "];
+    for (let ry = 0; ry < 7; ry++){
+      const row = rows[ry];
+      if (!row) continue;
+      for (let cxx = 0; cxx < 5; cxx++){
+        if (row & (1 << (4 - cxx))){
+          cx.fillRect(x + cxx*scale, y + ry*scale, scale, scale);
+        }
+      }
+    }
+    x += 6 * scale; // 5 cols + 1 gap
+    if (x >= W) break;
+  }
+}
+function center5x7(y, s, fg, scale){
+  scale = Math.max(1, scale|0);
+  const adv = 6 * scale;
+  const w = Math.max(0, s.length * adv - scale);
+  text5x7(Math.max(0, (W - w) >> 1), y, s, fg, scale);
+}
+
 // 1-bit packed bitmap, hex.  ["bmp", x, y, w, h, color, hexbits]
 function bmp(x, y, w, h, c2, hex){
   const bytes = [];
@@ -217,11 +259,18 @@ async function runApp(app, action, input){
   } catch(e){ log("run: " + e.message); return null; }
 }
 
+// Bright Cloudflare orange + dark-blue field — borrowed from living-artifact
+// for a punchier, more-on-brand chrome than plain orange-on-black.
+const DESK_ORANGE = "#ff8020";
+const DESK_DARK = "#001020";
+
 function renderDock(){
-  clr("black");
-  fill(0, 0, W, 24, "black");
-  textAt(8, 5, "DESK", "orange");
-  fill(0, 24, W, 1, "orange");
+  clr(DESK_DARK);
+  // Chunky DESK at scale=2 (10x14 glyphs). The whole canvas is already
+  // DESK_DARK so we don't paint a separate header band; the orange rule
+  // below is the only visual divider.
+  text5x7(6, 6, "DESK", DESK_ORANGE, 2);
+  fill(0, 26, W, 1, DESK_ORANGE);
   if (!dockApps.length){
     textAt(centerX("no apps", 1), 80, "no apps", "gray", 0);
     return;
@@ -232,7 +281,7 @@ function renderDock(){
     const hi = i === dockIdx;
     const pre = hi ? "> " : "  ";
     textAt(4, y, pre + dockApps[i].id.slice(0,12),
-           hi ? "orange" : "gray", 0);
+           hi ? DESK_ORANGE : "gray", 0);
   }
   textAt(4, 200, "A: open", "dim");
   textAt(4, 218, "B: next", "dim");

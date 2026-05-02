@@ -8,7 +8,7 @@ This page explains *why* desk is shaped the way it is. For
 
 desk is **a fabric Worker that loads apps from a git repo, runs
 them in isolates, renders them as frames, and exposes them to
-both wrist hardware and AI agents.**
+both device hardware and AI agents.**
 
 ## The forcing function
 
@@ -19,7 +19,7 @@ the fly.**
 This forces:
 
 - App install must be cheap (so you can iterate fast)
-- App execution must be sandboxed (so a bad app doesn't brick the wrist)
+- App execution must be sandboxed (so a bad app doesn't brick the device)
 - The wire format must be small (so a 162KB MicroPython device can render it)
 - The whole thing must run on infrastructure the operator owns
   (so it's actually personal, not a service)
@@ -46,10 +46,10 @@ flowchart TB
     fabric -- isomorphic-git --> repo
   end
 
-  wrist["wrist clients<br/>M5StickC · browser · (future: pi, watch)"]
+  device["device clients<br/>M5StickC · browser · (future: pi, watch)"]
   agents["MCP-capable agents<br/>Claude · Cursor · opencode · scripts"]
 
-  wrist -- HTTPS --> fabric
+  device -- HTTPS --> fabric
   agents -- HTTPS /mcp --> fabric
 ```
 
@@ -59,7 +59,7 @@ flowchart TB
 
 A single Cloudflare Worker. It:
 
-- Serves the wrist clients (`/list`, `/run`, `/viewer`)
+- Serves the device clients (`/list`, `/run`, `/viewer`)
 - Hosts the MCP server (`/mcp`)
 - Owns the singleton `AppRunner` Durable Object that orchestrates app execution
 - Owns the `DeskMcp` Durable Object that holds MCP session state
@@ -121,11 +121,11 @@ desk's tools without bespoke integration code.
 The fabric mounts an MCP server at `/mcp` using
 `McpAgent.serve()` from the `agents/mcp` package. Tool
 handlers that need user input (`desk.ask`) write a request
-into the `AppRunner` DO and poll for the answer; the wrist's
+into the `AppRunner` DO and poll for the answer; the device's
 existing `/run` polling handles the rendering and answer
 collection.
 
-**No new transport, no new auth, no wrist-side changes.** The
+**No new transport, no new auth, no device-side changes.** The
 MCP server is just another route on the fabric Worker. This
 decision is graduated as **D10: MCP via McpAgent.serve**. See
 [exp-17 RESULT](../../experiments/exp-17-mcp-spike/RESULT.md).
@@ -187,12 +187,12 @@ There's exactly one `AppRunner` Durable Object instance
 - The active observation
 - The volume target
 
-Because it's a singleton, all wrist clients (M5 + every
+Because it's a singleton, all device clients (M5 + every
 browser tab) see the same state. Press A in the browser, and
 the M5's next dock-refresh sees the result.
 
 This is also why **multi-device is currently unsupported.**
-The singleton means one wrist per fabric. Per-device routing
+The singleton means one device per fabric. Per-device routing
 needs device IDs in the DO key, which is on the roadmap but
 not shipped.
 
@@ -231,7 +231,7 @@ demands it.
   flow for "third-party" apps.
 - **Not an enterprise tool.** Single bearer, no audit log,
   no per-agent scoping. Designed for one person.
-- **Not multi-tenant.** Singleton AppRunner. One wrist per
+- **Not multi-tenant.** Singleton AppRunner. One device per
   fabric.
 - **Not AGI.** desk is plumbing. The agents driving it are
   the smart part, and they live elsewhere.

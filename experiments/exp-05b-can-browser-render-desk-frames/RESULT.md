@@ -3,7 +3,7 @@
 **Date:** 2026-05-01
 **State:** 🟢 **Graduated** — a single static HTML page renders the same desk
 frame protocol the M5 firmware does, drives the same fabric endpoints, and
-shares state with the wrist device live.
+shares state with the device live.
 
 ## What was proven
 
@@ -19,7 +19,7 @@ M5.
 
 ### 2. Same app source. Same backend. Two clients in parallel.
 
-The browser viewer and the wrist M5 hit the *same* `desk-fabric` Worker
+The browser viewer and the device M5 hit the *same* `desk-fabric` Worker
 endpoints and read state from the *same* DO Facets. Incrementing
 counter from the browser persists; opening counter on the M5
 afterwards shows the new value. They are equal-priority clients of the
@@ -176,8 +176,8 @@ gestures rather than mouse-events.
   refresh.
 - **Demo recording.** Any browser tab is a screen-recordable demo
   surface. The "30 second pitch video" stops requiring a phone
-  pointed at a wrist.
-- **Multi-display sessions.** Browser viewer on laptop + M5 on wrist =
+  pointed at a device.
+- **Multi-display sessions.** Browser viewer on laptop + M5 on device =
   two displays of the same desk session, both interactive.
 
 ## What does NOT graduate from this experiment

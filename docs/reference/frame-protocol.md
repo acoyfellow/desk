@@ -110,7 +110,7 @@ Colored pixel-art sprite.
 Characters in `rows` not present in `palette`, plus space, `.`, and
 `0`, render as transparent.
 
-The pet app's wrist creature is rendered this way.
+The pet app's device creature is rendered this way.
 
 ### `["led", state, count?]`
 

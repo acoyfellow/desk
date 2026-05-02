@@ -1,14 +1,14 @@
 # Build your first desk
 
 This tutorial takes you from "nothing" to "an MCP-capable agent
-asks me a question on my wrist and I press a button to answer."
+asks me a question on my device and I press a button to answer."
 
 By the end you'll have:
 
 - A fabric Worker running on your Cloudflare account
 - An M5StickC Plus 1.1 (or just a browser tab) showing your dock
 - An app you wrote yourself, installed via `git push`
-- An agent connected via MCP that can drive your wrist
+- An agent connected via MCP that can drive your device
 
 Estimated time: **60–90 minutes**, of which about half is
 waiting for one-time setup (Cloudflare account, M5 firmware
@@ -109,7 +109,7 @@ open "https://<your-fabric>.workers.dev/viewer#url=https://<your-fabric>.workers
 ```
 
 You should see an orange `DESK` banner with `inbox` listed in
-the dock. That's your wrist surface in browser form.
+the dock. That's your device surface in browser form.
 
 Keep this tab open. Skip to step 5.
 
@@ -240,7 +240,7 @@ go back to the dock.
 ## Step 7: Drive it from an agent
 
 The fabric also exposes an MCP server that lets agents drive
-your wrist. Quick test:
+your device. Quick test:
 
 ```bash
 DESK_MCP_URL=https://<your-fabric>.workers.dev/mcp \
@@ -248,7 +248,7 @@ DESK_DEVICE_TOKEN=$(cat ~/.config/desk/device-token | tr -d '[:space:]') \
 bun demos/agent-elicit.ts
 ```
 
-Your wrist should:
+Your device should:
 
 1. Chirp
 2. Display the question "should I keep going?"
@@ -257,7 +257,7 @@ Your wrist should:
 Press A. The script prints `{"choice": "yes please", ...}` and
 exits.
 
-🤖 An agent just drove your wrist.
+🤖 An agent just drove your device.
 
 To wire desk into a real agent (Claude Desktop, Cursor,
 opencode), follow [the connect-an-agent guide](../how-to/connect-an-agent.md).
@@ -270,18 +270,18 @@ opencode), follow [the connect-an-agent guide](../how-to/connect-an-agent.md).
 flowchart TB
   laptop["your laptop<br/>bun · wrangler · apps repo · tokens"]
   cf["your Cloudflare account<br/>desk fabric · Artifacts repo · Worker Loader"]
-  wrist["the wrist<br/>M5 or browser"]
+  device["the device<br/>M5 or browser"]
   agents["MCP-capable agents"]
   apps["git push installs apps"]
 
   laptop -- deploys --> cf
-  cf --> wrist
+  cf --> device
   cf --> agents
   laptop --> apps
   apps --> cf
 ```
 
-A wrist surface, an app distribution channel, an agent-control
+A device surface, an app distribution channel, an agent-control
 plane — all running on infrastructure you own.
 
 ---
@@ -303,7 +303,7 @@ plane — all running on infrastructure you own.
 So you don't get surprised:
 
 - **OAuth.** The bearer is shared. Don't share it.
-- **Multiple devices.** Singleton AppRunner = one wrist per
+- **Multiple devices.** Singleton AppRunner = one device per
   fabric.
 - **Background apps.** `setAlarm` doesn't work inside DO Facets
   yet (F-10).

@@ -15,7 +15,7 @@ first client, not the product.**
 
 In addition: desk's fabric Worker exposes an **MCP server** at `/mcp`. Any
 MCP-capable agent (pi, opencode, Claude Desktop, Cursor) can call into
-it to use the operator's wrist for human-in-the-loop interaction. **This
+it to use the operator's device for human-in-the-loop interaction. **This
 is the demo that makes desk distinctive.**
 
 ## What's currently shipped (production)

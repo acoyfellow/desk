@@ -22,5 +22,5 @@ bun demos/agent-elicit.ts elicit
 
 - The fabric MCP server (`/mcp`) accepts bearer auth and routes `tools/call`
   to the right `McpAgent` DO method.
-- `desk.ask` blocks for up to 60s waiting on a wrist button press.
+- `desk.ask` blocks for up to 60s waiting on a device button press.
 - `desk.inbox` posts a non-blocking message to the Inbox surface.

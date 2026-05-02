@@ -4,10 +4,10 @@ This solves the problem of letting an MCP-capable agent (Claude
 Desktop, Cursor, opencode, pi, hermes, your own script) drive
 desk to:
 
-- Ask you questions on your wrist (`desk.ask`)
+- Ask you questions on your device (`desk.ask`)
 - Post notifications (`desk.inbox`)
 - Show ambient activity (`desk.observe`)
-- Change wrist volume (`desk.set_volume`)
+- Change device volume (`desk.set_volume`)
 - Sanity-check the connection (`desk.echo`)
 
 ## Prerequisites
@@ -100,7 +100,7 @@ connected. If the call fails:
 
 ```
 agent: I'm about to delete 3 files. Use desk.ask("delete?", ["yes", "no"], 60).
-[wrist takes over, user presses A]
+[device takes over, user presses A]
 agent: Got "yes". Deleting...
 ```
 
@@ -108,7 +108,7 @@ agent: Got "yes". Deleting...
 
 ```
 agent: [calls desk.observe("running tests", body="142/200", phase="testing", ttl_seconds=60)]
-[wrist shows ambient status; user can glance, no input needed]
+[device shows ambient status; user can glance, no input needed]
 ```
 
 ### Office mode
@@ -116,19 +116,19 @@ agent: [calls desk.observe("running tests", body="142/200", phase="testing", ttl
 ```
 operator: I'm in the office. Use desk.set_volume(0).
 agent: [calls desk.set_volume(0)]
-agent: Got it. Volume set to mute. The wrist will silence on its next dock-refresh poll.
+agent: Got it. Volume set to mute. The device will silence on its next dock-refresh poll.
 ```
 
 ### Notification, not interruption
 
 ```
 agent: Tests passed. desk.inbox("142 passed in 4.2s", "info")
-[wrist beeps once and shows the message; user dismisses with A]
+[device beeps once and shows the message; user dismisses with A]
 ```
 
 ## Changing volume
 
-The wrist has three volume levels (mute / quiet / loud). Three
+The device has three volume levels (mute / quiet / loud). Three
 ways to change it:
 
 1. **Remote (any agent):** `desk.set_volume(0|1|2)` — change persists
@@ -140,7 +140,7 @@ ways to change it:
 ## Sharing a desk fabric (don't, yet)
 
 The bearer is a static shared secret. Anyone with it can drive
-every tool on your wrist. There's no audit log, no per-agent
+every tool on your device. There's no audit log, no per-agent
 scoping, no revocation.
 
 If you give an agent the bearer, you're trusting:

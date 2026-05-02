@@ -58,7 +58,7 @@ running. Next time hello loads on the M5, it gets the new version.
    3. one-shot setup script: create namespace+repo, mint repo token,
       flash M5, populate secrets
    4. M5 boots, dock appears
-   5. git push apps/foo/manifest.md \u2192 it's on your wrist
+   5. git push apps/foo/manifest.md \u2192 it's on your device
 
 ## What's NOT yet done
 

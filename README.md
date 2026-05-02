@@ -1,30 +1,34 @@
 # desk
 
-> Your wrist as an MCP surface. Your edge as the agent's I/O.
+> A personal app store for tiny edge devices. `git push` installs.
 
 <p align="center">
   <img src="./docs/screenshots/desk-on-m5.jpg" alt="desk running on an M5StickC Plus 1.1" width="320">
 </p>
 
-A personal, Cloudflare-hosted platform that lets any AI agent
-— Claude Desktop, Cursor, opencode, your own scripts — use
-your wrist for human-in-the-loop interaction.
+Apps live as Markdown files in a Cloudflare Artifacts git repo
+you own. They run in Worker Loader isolates with state in DO
+Facets. A small device — an M5StickC, a browser tab, anything
+that can poll HTTPS and paint pixels — renders them.
 
-You own the edge. The edge owns nothing about you.
-
-```typescript
-// Any MCP-capable agent:
-const decision = await desk.ask({
-  question: "ship to prod?",
-  options: ["ship", "cancel"],
-});
-// → operator's wrist takes over screen, plays a chime, shows the question
-// → operator presses A or B
-// → decision === { choice: "ship" } returns to the agent
+```bash
+git commit -m "+ counter app"
+git push
 ```
 
-The agent never sees the wrist. The operator never sees a
-sidebar. The wrist is the I/O channel.
+That's the install. Within seconds, the new app shows up in
+the device's dock. `git revert` is rollback. `git log` is the
+audit trail.
+
+Apps can do anything a small isolate can do — read button
+input, render frames, persist per-app SQLite state, play
+sound, expose [MCP](https://modelcontextprotocol.io) tools so
+agents can drive them. The reference apps shipped with the
+fabric include a counter, a virtual pet, a chiptune jukebox,
+and an inbox surface that lets any MCP-capable agent ask the
+operator questions out-of-band.
+
+You own the edge. The edge owns nothing about you.
 
 ## Get started
 
@@ -39,7 +43,7 @@ Read the [docs](./docs/index.md). Specifically:
 ```mermaid
 flowchart TB
   agent["agent (any MCP client)"]
-  wrist["M5StickC Plus 1.1<br/>or browser tab"]
+  device["M5StickC Plus 1.1<br/>or browser tab"]
 
   subgraph fabric["desk fabric Worker"]
     direction LR
@@ -58,7 +62,7 @@ flowchart TB
   repo[("desk/apps<br/>Artifacts repo")]
 
   agent -- POST /mcp --> fabric
-  wrist -- HTTPS poll<br/>/list + /run --> fabric
+  device -- HTTPS poll<br/>/list + /run --> fabric
   src --> repo
 ```
 

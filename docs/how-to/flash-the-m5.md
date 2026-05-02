@@ -114,7 +114,7 @@ DESK_DEVICE_TOKEN=$(cat ~/.config/desk/device-token | tr -d '[:space:]') \
 bun demos/agent-elicit.ts
 ```
 
-The wrist should chirp, display "should I keep going?", and
+The device should chirp, display "should I keep going?", and
 wait for you to press A. The script returns the answer.
 
 ## Troubleshooting

@@ -223,6 +223,43 @@ class _MPU6886:
 imu = _MPU6886()
 
 
+# --- 5x7 chunky bitmap font ---
+# Ported from living-artifact's hand-rolled font (firmware/main/main.c).
+# Each glyph is 7 rows of 5 bits packed into the low 5 bits of a byte.
+# Coverage: SPACE - > . 0-9 A-Z. Use uppercase for everything else
+# (lookup falls back to space for unknown chars).
+#
+# Designed to be drawn via fill_rect at integer scale. At scale=2 the
+# glyph is 10x14 px; at scale=3 it's 15x21. Looks great in dock chrome
+# and big numeric headlines, on-brand chunky aesthetic.
+_FONT5X7 = {
+    " ": (0,0,0,0,0,0,0),  "-": (0,0,0,31,0,0,0),
+    ">": (16,8,4,2,4,8,16), ".": (0,0,0,0,0,12,12),
+    "0": (14,17,19,21,25,17,14), "1": (4,12,4,4,4,4,14),
+    "2": (14,17,1,2,4,8,31), "3": (30,1,1,14,1,1,30),
+    "4": (2,6,10,18,31,2,2), "5": (31,16,30,1,1,17,14),
+    "6": (6,8,16,30,17,17,14), "7": (31,1,2,4,8,8,8),
+    "8": (14,17,17,14,17,17,14), "9": (14,17,17,15,1,2,12),
+    "A": (14,17,17,31,17,17,17), "B": (30,17,17,30,17,17,30),
+    "C": (14,17,16,16,16,17,14), "D": (30,17,17,17,17,17,30),
+    "E": (31,16,16,30,16,16,31), "F": (31,16,16,30,16,16,16),
+    "G": (14,17,16,23,17,17,15), "H": (17,17,17,31,17,17,17),
+    "I": (14,4,4,4,4,4,14),     "J": (7,2,2,2,18,18,12),
+    "K": (17,18,20,24,20,18,17), "L": (16,16,16,16,16,16,31),
+    "M": (17,27,21,21,17,17,17), "N": (17,25,21,19,17,17,17),
+    "O": (14,17,17,17,17,17,14), "P": (30,17,17,30,16,16,16),
+    "Q": (14,17,17,17,21,18,13), "R": (30,17,17,30,20,18,17),
+    "S": (15,16,16,14,1,1,30),   "T": (31,4,4,4,4,4,4),
+    "U": (17,17,17,17,17,17,14), "V": (17,17,17,17,17,10,4),
+    "W": (17,17,17,21,21,21,10), "X": (17,17,10,4,10,17,17),
+    "Y": (17,17,10,4,4,4,4),     "Z": (31,1,2,4,8,16,31),
+}
+_FONT5X7_W = 5
+_FONT5X7_H = 7
+# advance = glyph width + 1 px gap. At scale=N, advance = (5+1)*N.
+_FONT5X7_ADV_BASE = 6
+
+
 # --- Display: ST7789 135x240 over SPI2 (Plus 1.1 wiring) ---
 _spi = SPI(2, baudrate=20_000_000, polarity=0, phase=0,
            sck=Pin(13), mosi=Pin(15))
@@ -256,25 +293,26 @@ class _Screen:
     def clear(self, color=BLACK):
         tft.fill(color)
 
-    def text(self, s, x, y, fg=WHITE, bg=BLACK, big=False):
-        """Draw text; clips automatically to screen width."""
+    def text(self, s, x, y, fg=WHITE, bg=None, big=False):
+        """Draw text; clips automatically to screen width.
+           bg=None (default) = transparent — only set pixels are painted.
+           Pass an explicit bg color for a solid background fill."""
         f = font_sm  # only one font in v1
-        # Effective scale: big=True uses 2x via per-char zoom (manual blit)
         scale = 2 if big else 1
         char_w = f.WIDTH * scale
         max_chars = (self.W - x) // char_w
         s = s[:max_chars]
-        if scale == 1:
+        if scale == 1 and bg is not None:
+            # Fast path: solid bg, native driver call.
             tft.text(f, s, x, y, fg, bg)
         else:
-            # 2x manual: read each glyph and draw 2x2 squares for each set pixel
+            # Transparent bg, or 2x scale — manual per-pixel blit.
             self._scaled_text(f, s, x, y, scale, fg, bg)
 
     def _scaled_text(self, f, s, x, y, scale, fg, bg):
-        # font glyphs are stored as bytes; first byte of MAP gives offset.
-        # Simpler: draw small text first, then read pixels back? No — just
-        # render a 2x scale by drawing 2x wider hlines for each glyph row.
-        # The font module exposes WIDTH, HEIGHT, FIRST, LAST, FONT bytes.
+        # Per-pixel blit. If bg is not None, paint the cell bg too so the
+        # caller still gets a solid block. If bg is None, only set pixels
+        # are painted — letting whatever's underneath show through.
         for ci, ch in enumerate(s):
             code = ord(ch)
             if code < f.FIRST or code > f.LAST:
@@ -283,12 +321,14 @@ class _Screen:
             for row in range(f.HEIGHT):
                 row_byte = f.FONT[glyph_offset + row]
                 for col in range(f.WIDTH):
+                    gx = x + ci * f.WIDTH * scale + col * scale
+                    gy = y + row * scale
                     if row_byte & (1 << (7 - col)):
-                        gx = x + ci * f.WIDTH * scale + col * scale
-                        gy = y + row * scale
                         tft.fill_rect(gx, gy, scale, scale, fg)
+                    elif bg is not None:
+                        tft.fill_rect(gx, gy, scale, scale, bg)
 
-    def center(self, s, y, fg=WHITE, bg=BLACK, big=False):
+    def center(self, s, y, fg=WHITE, bg=None, big=False):
         scale = 2 if big else 1
         w = len(s) * font_sm.WIDTH * scale
         x = max(0, (self.W - w) // 2)
@@ -304,6 +344,30 @@ class _Screen:
         """Top status bar — handy chrome for demos."""
         tft.fill_rect(0, 0, self.W, 20, color)
         self.center(title, 2, BLACK, color)
+
+    # --- 5x7 chunky font ---
+    def text5x7(self, s, x, y, fg=WHITE, scale=2):
+        """Draw an UPPERCASE-only 5x7 bitmap string at integer scale.
+           Unknown chars fall back to space. No anti-aliasing; pure rects."""
+        if scale < 1: scale = 1
+        s = s.upper()
+        adv = _FONT5X7_ADV_BASE * scale
+        for ch in s:
+            rows = _FONT5X7.get(ch, _FONT5X7[" "])
+            for ry, row in enumerate(rows):
+                if not row: continue
+                for cx in range(_FONT5X7_W):
+                    if row & (1 << (_FONT5X7_W - 1 - cx)):
+                        tft.fill_rect(x + cx*scale, y + ry*scale, scale, scale, fg)
+            x += adv
+            if x >= self.W: break
+
+    def center5x7(self, s, y, fg=WHITE, scale=2):
+        adv = _FONT5X7_ADV_BASE * scale
+        # the last char doesn't need its trailing 1px gap
+        w = max(0, len(s) * adv - scale)
+        x = max(0, (self.W - w) // 2)
+        self.text5x7(s, x, y, fg, scale)
 
 screen = _Screen()
 

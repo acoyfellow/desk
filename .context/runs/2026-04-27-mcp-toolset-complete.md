@@ -5,7 +5,7 @@
 **Three production MCP tools,** all bearer-auth gated, all callable from any
 MCP-capable agent given `$DESK_DEVICE_TOKEN`:
 
-- `desk.elicit(question, options[], timeout_seconds)` — wrist takeover, blocks for user choice
+- `desk.elicit(question, options[], timeout_seconds)` — device takeover, blocks for user choice
 - `desk.notify(text, level)` — non-blocking notification queue
 - `desk.tally(label, delta)` — named counter with persistent history
 - `desk.echo(text)` — sanity check
@@ -36,7 +36,7 @@ Two headless demos that drove the live deployed MCP server:
 2. `bun demos/agent-loop.ts` — full deploy simulation:
    notify("starting deploy") → tally("build-step") x3 → elicit("ship?") → 
    user pressed A → tally("deploys")++ → notify("✓ shipped").
-   Real round-trip, real wrist, real edge.
+   Real round-trip, real device, real edge.
 
 ## Decisions added
 

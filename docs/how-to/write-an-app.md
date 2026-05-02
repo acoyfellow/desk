@@ -135,7 +135,7 @@ git -c user.email="you@example.com" -c user.name="you" \
 git push origin HEAD:main
 ```
 
-## 4. Verify on the wrist
+## 4. Verify on the device
 
 The M5 polls `/list` every 10s. Within 10 seconds, the dock
 chirps and `dice` appears in the list. Open it: short A rolls,
@@ -245,4 +245,4 @@ The repo ships reference apps you can read:
 
 - [Manifest schema reference](../reference/manifest-schema.md) — every field
 - [Frame protocol reference](../reference/frame-protocol.md) — every op
-- [How to connect an agent](connect-an-agent.md) — let agents drive your wrist
+- [How to connect an agent](connect-an-agent.md) — let agents drive your device

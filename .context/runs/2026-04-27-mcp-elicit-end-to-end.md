@@ -2,7 +2,7 @@
 
 ## What happened
 
-Agent → MCP → wrist → button → MCP → agent. Full loop, real edge.
+Agent → MCP → device → button → MCP → agent. Full loop, real edge.
 
 ```
 laptop (MCP client)

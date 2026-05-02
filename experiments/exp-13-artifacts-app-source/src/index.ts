@@ -143,6 +143,13 @@ type Observation = {
   expires_at: number;
 };
 
+type ConsoleProgram = {
+  code: string;
+  updated_at: number;
+  status: "ready" | "error";
+  last_error?: string;
+};
+
 export class AppRunner extends DurableObject<Env> {
   // Pending elicit (only one at a time — if a new one arrives, it replaces).
   // Lives in DO storage so it survives restarts.
@@ -230,6 +237,30 @@ export class AppRunner extends DurableObject<Env> {
     return obs;
   }
 
+  async putConsoleCode(code: string): Promise<ConsoleProgram> {
+    const program: ConsoleProgram = {
+      code: code.slice(0, 12000),
+      updated_at: Date.now(),
+      status: "ready",
+    };
+    await this.ctx.storage.put("_console_program", program);
+    return program;
+  }
+
+  async getConsoleCode(): Promise<ConsoleProgram | null> {
+    return (await this.ctx.storage.get<ConsoleProgram>("_console_program")) ?? null;
+  }
+
+  async putConsoleError(message: string): Promise<void> {
+    const cur = await this.getConsoleCode();
+    await this.ctx.storage.put("_console_program", {
+      code: cur?.code ?? "",
+      updated_at: Date.now(),
+      status: "error",
+      last_error: message.slice(0, 500),
+    } satisfies ConsoleProgram);
+  }
+
   // ── Volume target: 0=mute, 1=quiet, 2=loud. Stored in DO storage and
   //    surfaced on /list so the M5 picks it up on its next dock-refresh
   //    poll (~10s). The device persists volume locally too — this is the
@@ -259,7 +290,7 @@ export class AppRunner extends DurableObject<Env> {
     if (!appId) return new Response("missing ?app=", { status: 400 });
 
     // ── INBOX TAKEOVER: blocking questions and unread notifications share
-    //    one wrist surface. notify is non-blocking for agents; elicit waits.
+    //    one device surface. notify is non-blocking for agents; elicit waits.
     const pending = await this.getPendingElicit();
     const queue = await this.getNotifications();
     const unreadNotice = queue.find(n => !n.read);
@@ -277,6 +308,63 @@ export class AppRunner extends DurableObject<Env> {
         frame: pending ? this.#renderElicit(pending) : this.#renderNotice(unreadNotice!),
         meta: pending ? { takeover: "inbox", kind: "ask", elicit_id: pending.id } : { takeover: "inbox", kind: "notify", notify_id: unreadNotice!.id },
       });
+    }
+
+    // ── Special path: appId === "console" — MCP-fed code runner.
+    // The code is JavaScript because Worker Loader already gives us the
+    // real sandbox. If it throws, the device shows the error and B returns
+    // to dock; the next MCP console_push replaces it.
+    if (appId === "console") {
+      if (action === "init" || action === "input") {
+        const program = await this.getConsoleCode();
+        if (!program?.code) {
+          return Response.json({ frame: { f: 0, ops: [
+            ["clr", "black"],
+            ["bnr", "CONSOLE", "green"],
+            ["txt", 4, 48, "waiting for", "gray"],
+            ["txt", 4, 66, "MCP code...", "gray"],
+            ["txt", 4, 202, "send via", "dim"],
+            ["txt", 4, 218, "desk.console", "cyan"],
+          ] } });
+        }
+        const appFile: AppFile = {
+          source: program.code,
+          contentHash: "console-" + program.updated_at,
+          resolvedVersion: "mcp",
+          manifest: {
+            id: "console",
+            version: String(program.updated_at),
+            permissions: { screen: "write", buttons: "read", buzzer: "write", led: "write" },
+            budget: { cpu_ms_per_input: 100 },
+          },
+        } as any;
+        try {
+          const facet = this.ctx.facets.get(`console-${program.updated_at}`, async () => {
+            const code = this.#loadDynamicCode(appFile);
+            const appClass = code.getDurableObjectClass("_DeskApp");
+            return { class: appClass };
+          });
+          const cmd = action === "init" ? { kind: "init" }
+            : { kind: "input", input: JSON.parse(url.searchParams.get("input") ?? "{}") };
+          const facetRes = await facet.fetch(new Request("http://app/", {
+            method: "POST",
+            body: JSON.stringify(cmd),
+          }));
+          const text = await facetRes.text();
+          let frame: any;
+          try { frame = JSON.parse(text); } catch { frame = { error: "non-json: " + text.slice(0, 100) }; }
+          if (!facetRes.ok || frame?.error) {
+            const msg = frame?.error ? String(frame.error) : text.slice(0, 200);
+            await this.putConsoleError(msg);
+            return Response.json({ frame: this.#renderConsoleError(msg) });
+          }
+          return Response.json({ frame, meta: { system: "console", updated_at: program.updated_at } });
+        } catch (err: any) {
+          const msg = `${err?.name ?? "Error"}: ${err?.message ?? String(err)}`;
+          await this.putConsoleError(msg);
+          return Response.json({ frame: this.#renderConsoleError(msg) });
+        }
+      }
     }
 
     // ── Special path: appId === "inbox" — all human communication
@@ -423,6 +511,19 @@ export class AppRunner extends DurableObject<Env> {
     return { f: obs.updated_at, ops };
   }
 
+  #renderConsoleError(message: string) {
+    const ops: any[] = [["clr", "black"], ["bnr", "CONSOLE ERR", "red"]];
+    let y = 42;
+    for (const line of wrapToWidth(message, 16).slice(0, 7)) {
+      ops.push(["txt", 4, y, line, "white"]);
+      y += 18;
+    }
+    ops.push(["txt", 4, 202, "fix via MCP", "gray"]);
+    ops.push(["txt", 4, 218, "B: back", "gray"]);
+    ops.push(["buz", 220, 120]);
+    return { f: Date.now(), ops };
+  }
+
   #renderNotify(queue: Notification[]) {
     const ops: any[] = [
       ["clr", "black"],
@@ -539,7 +640,7 @@ export class DeskMcp extends McpAgent<Env> {
       "ask",
       "Ask the human a question via their desk device inbox. Returns their chosen option. The user has up to 60 seconds to answer; otherwise returns timeout.",
       {
-        question: z.string().describe("The question to display on the wrist screen. Keep under ~80 chars; longer text wraps."),
+        question: z.string().describe("The question to display on the device screen. Keep under ~80 chars; longer text wraps."),
         options: z.array(z.string()).min(1).max(3).describe(
           "1-3 short options. options[0] = A button. options[1] (optional) = shown but unselectable (use only if you want a 'cancel' visible). options[2] (optional) = long-press A."
         ),
@@ -592,9 +693,9 @@ export class DeskMcp extends McpAgent<Env> {
 
     this.server.tool(
       "inbox",
-      "Send a non-blocking notification to the user's wrist inbox. Use for status updates, completion announcements, errors. Keep text short (<200 chars).",
+      "Send a non-blocking notification to the user's device inbox. Use for status updates, completion announcements, errors. Keep text short (<200 chars).",
       {
-        text: z.string().describe("The notification text. Wraps on the wrist."),
+        text: z.string().describe("The notification text. Wraps on the device."),
         level: z.enum(["info", "warn", "error"]).default("info").describe("Visual urgency."),
       },
       async ({ text, level }) => {
@@ -611,7 +712,7 @@ export class DeskMcp extends McpAgent<Env> {
 
     this.server.tool(
       "observe",
-      "Update the wrist with ambient agent activity. Non-blocking; use to show what an agent is doing without asking for input.",
+      "Update the device with ambient agent activity. Non-blocking; use to show what an agent is doing without asking for input.",
       {
         title: z.string().min(1).max(40).describe("Short status title."),
         body: z.string().max(120).optional().describe("Optional detail text."),
@@ -628,8 +729,26 @@ export class DeskMcp extends McpAgent<Env> {
     );
 
     this.server.tool(
+      "console",
+      "Replace the code for the on-device Console app. Open the Console app on the device to run it. Code is a desk app class body in JavaScript: export class App { async init() { return { f: 0, ops: [[\"bnr\",\"HI\"]] } } async onInput(input) { ... } }. If it fails, the device shows the error and returns to dock normally.",
+      {
+        code: z.string().min(1).max(12000).describe("JavaScript desk app source. Must export class App with init() and optional onInput(input). Return {f, ops} frames."),
+      },
+      async ({ code }) => {
+        const runner = this.env.APP_RUNNER.get(this.env.APP_RUNNER.idFromName("singleton"));
+        const program = await runner.putConsoleCode(code);
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify({ ok: true, app: "console", updated_at: program.updated_at, bytes: program.code.length, note: "open Console on the device to run" }),
+          }],
+        };
+      },
+    );
+
+    this.server.tool(
       "set_volume",
-      "Set the wrist device buzzer volume. 0=mute (office mode), 1=quiet, 2=loud. Persists across reboots; the device picks up the change on its next dock-refresh poll (~10s).",
+      "Set the device buzzer volume. 0=mute (office mode), 1=quiet, 2=loud. Persists across reboots; the device picks up the change on its next dock-refresh poll (~10s).",
       {
         level: z.number().int().min(0).max(2).describe("0=mute, 1=quiet, 2=loud"),
       },
@@ -713,8 +832,14 @@ export default {
       const volumeTarget = await runner.getVolumeTarget();
       const filtered = apps.filter((a: any) => a.id !== "elicit" && a.id !== "notify");
       const hasInbox = filtered.some((a: any) => a.id === "inbox");
+      const hasConsole = filtered.some((a: any) => a.id === "console");
       const inbox = { id: "inbox", versions: ["0.1.0"] };
-      const listed = hasInbox ? filtered : [inbox, ...filtered];
+      const consoleApp = { id: "console", versions: ["0.1.0"] };
+      const listed = [
+        ...(hasInbox ? [] : [inbox]),
+        ...(hasConsole ? [] : [consoleApp]),
+        ...filtered,
+      ];
       console.log(`[fabric] /list returned ${listed.length} apps; pending_elicit=${pending ? pending.id : "none"}; pending_notify=${unreadNotice ? unreadNotice.id : "none"}; volume_target=${volumeTarget ?? "none"}`);
       return Response.json({
         apps: listed,

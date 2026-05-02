@@ -170,8 +170,9 @@ if _ip is None:
 if not _dns_ok:
     wifi_retry_loop("dns failed")
 
-screen.clear()
-screen.banner("DESK", ORANGE)
+screen.clear(rgb(0x00, 0x10, 0x20))   # DESK_DARK; defined later but rgb is safe here
+screen.text5x7("DESK", 6, 6, rgb(0xFF, 0x80, 0x20), scale=2)
+screen.hline(0, 26, 135, rgb(0xFF, 0x80, 0x20))
 screen.center("connected", 100, GREEN)
 screen.text(_ip[:16], 4, 222, DIM)
 sleep_ms(300)
@@ -402,19 +403,17 @@ def render(frame):
 
 
 # ───── Dock ─────
-_CF_HEX = ("000000000000ff000007ffe0001ffff8003ffffc00fffffe07ffffff"
-           "3fffffff7fffffffffffffffffffffffffffffffffffffffffffffff")
-CF_ORANGE = rgb(0xF3, 0x80, 0x20)
+# Palette borrowed from living-artifact's branded firmware: brighter
+# Cloudflare orange + dark-blue field for high-contrast headers.
+DESK_ORANGE = rgb(0xFF, 0x80, 0x20)   # ~CF_ORANGE 0xfd20 in RGB565
+DESK_DARK   = rgb(0x00, 0x10, 0x20)   # near-black with a hint of blue
 _chrome_drawn = False
 _last_idx = -1
 _ROW_Y = 38
 _ROW_H = 18
 
 # Status dot is at a fixed position in EVERY top bar (banner or dock-chrome).
-# Center: x=124..130 (6px wide), y=7..13 (6px tall). The orange banner is
-# 0..20 tall so y=7 vertically centers; the dock chrome's BLACK header is
-# 0..24 so y=7 also reads as right-of-DESK.
-_DOT_X, _DOT_Y, _DOT_SZ = 124, 7, 6
+_DOT_X, _DOT_Y, _DOT_SZ = 122, 9, 6
 _last_status = "ok"
 
 def status_dot(state):
@@ -425,20 +424,21 @@ def status_dot(state):
     screen.fill_rect(_DOT_X, _DOT_Y, _DOT_SZ, _DOT_SZ, c)
 
 def _dock_chrome():
-    screen.clear()
-    screen.fill_rect(0, 0, 135, 24, BLACK)
-    _draw_bmp1(8, 5, 32, 14, CF_ORANGE, _CF_HEX)
-    screen.text("DESK", 50, 9, CF_ORANGE)
-    screen.hline(0, 24, 135, CF_ORANGE)
+    screen.clear(DESK_DARK)
+    # Chunky DESK at scale=2 (10x14 glyphs). No separate header fill —
+    # the entire screen is DESK_DARK already, so the rule below is the
+    # only visual divider between header and body.
+    screen.text5x7("DESK", 6, 6, DESK_ORANGE, scale=2)
+    screen.hline(0, 26, 135, DESK_ORANGE)
     screen.text("A: open", 4, 200, DIM)
     screen.text("B: next", 4, 218, DIM)
-    status_dot(_last_status)  # always paint dot last so it sits on top
+    status_dot(_last_status)
 
 def _dock_row(i, app, hi):
     y = _ROW_Y + i * _ROW_H
-    screen.fill_rect(0, y, 135, _ROW_H, BLACK)
+    screen.fill_rect(0, y, 135, _ROW_H, DESK_DARK)
     pre = ">" if hi else " "
-    screen.text(pre + " " + app["id"][:12], 4, y, ORANGE if hi else GRAY)
+    screen.text(pre + " " + app["id"][:12], 4, y, DESK_ORANGE if hi else GRAY)
 
 def render_dock(apps, idx, full=False):
     global _chrome_drawn, _last_idx
@@ -606,7 +606,7 @@ while True:
             # If a pending elicit OR an unread notification just appeared,
             # take over by opening the inbox app. The supervisor will render
             # the right surface because it sees the same pending state.
-            # Different chirps so the wrist's urgency is distinguishable:
+            # Different chirps so the device's urgency is distinguishable:
             # double chirp for blocking elicit, single softer chirp for
             # non-blocking notification.
             if _PENDING_ELICIT is not None or _PENDING_NOTIFY is not None:

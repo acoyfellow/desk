@@ -155,7 +155,7 @@ Anyone with the token can:
 - Read the dock list and any app frame
 - Drive any app (press buttons remotely)
 - Drive any MCP tool (including `desk.ask` to phish the operator)
-- Change the wrist volume
+- Change the device volume
 
 Treat the bearer like an SSH key. v0 is single-operator on
 purpose. OAuth on `/mcp` is exp-12 territory.

@@ -7,7 +7,7 @@ Pick the section that matches what you're trying to do.
 *Learning by doing. Start here if it's your first time.*
 
 - [Build your first desk](tutorials/01-build-your-first-desk.md) — from
-  zero to "an agent asks me a question on my wrist" in 60–90 minutes.
+  zero to "an agent asks me a question on my device" in 60–90 minutes.
 
 ## How-to guides
 
@@ -50,7 +50,7 @@ Not part of the user docs, but worth knowing about:
 |---|---|
 | Try desk for the first time | [Tutorial](tutorials/01-build-your-first-desk.md) |
 | Run my own fabric | [Deploy the fabric](how-to/deploy-the-fabric.md) |
-| Set up the wrist hardware | [Flash the M5](how-to/flash-the-m5.md) |
+| Set up the device hardware | [Flash the M5](how-to/flash-the-m5.md) |
 | Add a new app | [Write an app](how-to/write-an-app.md) |
 | Wire desk into Claude / Cursor | [Connect an agent](how-to/connect-an-agent.md) |
 | Look up a frame op | [Frame protocol](reference/frame-protocol.md) |
