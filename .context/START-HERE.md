@@ -1,9 +1,10 @@
 # desk — START HERE (for agents and contributors)
 
 If you're an agent picking this project up, read this file first, then
-`NOW.md`, `INVARIANTS.md`, `DECISIONS.md`. If you're a human contributor,
-the same order works — but you may also want the public install docs in
-the top-level README.
+`NOW.md`, `INVARIANTS.md`, `DECISIONS.md`. If you're a human contributor
+who wants to *use* desk, the user docs at [`../docs/`](../docs/index.md)
+are organized in [Diátaxis](https://diataxis.fr/) form — start with the
+tutorial. Read this file when you want the engineering context.
 
 ## What desk is
 
