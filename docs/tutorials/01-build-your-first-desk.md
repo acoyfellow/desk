@@ -266,20 +266,19 @@ opencode), follow [the connect-an-agent guide](../how-to/connect-an-agent.md).
 
 ## What you've built
 
-```
-┌──────────────────────┐     ┌─────────────────────┐
-│ Your laptop          │     │ Cloudflare account  │
-│ - bun + wrangler     │     │ - desk fabric       │
-│ - apps repo (git)    │ ──▶ │ - Artifacts repo    │
-│ - tokens at ~/.config│     │ - Worker Loader     │
-└──────────────────────┘     └─────────┬───────────┘
-                                       │
-              ┌────────────────────────┼────────────────┐
-              ▼                        ▼                ▼
-       ┌──────────────┐        ┌──────────────┐  ┌──────────┐
-       │ M5 / browser │        │ MCP-capable  │  │ git push │
-       │ (the wrist)  │        │ agents       │  │ apps     │
-       └──────────────┘        └──────────────┘  └──────────┘
+```mermaid
+flowchart TB
+  laptop["your laptop<br/>bun · wrangler · apps repo · tokens"]
+  cf["your Cloudflare account<br/>desk fabric · Artifacts repo · Worker Loader"]
+  wrist["the wrist<br/>M5 or browser"]
+  agents["MCP-capable agents"]
+  apps["git push installs apps"]
+
+  laptop -- deploys --> cf
+  cf --> wrist
+  cf --> agents
+  laptop --> apps
+  apps --> cf
 ```
 
 A wrist surface, an app distribution channel, an agent-control

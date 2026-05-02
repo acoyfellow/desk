@@ -28,39 +28,29 @@ Everything else falls out from there.
 
 ## The big picture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ Operator's Cloudflare account                                    │
-│                                                                   │
-│  ┌─────────────────────────────┐   ┌──────────────────────────┐  │
-│  │ desk-fabric (Worker)        │   │ desk/apps Artifacts repo │  │
-│  │                              │   │                           │  │
-│  │  ┌────────┐ ┌────────────┐  │ ◀─┤ apps/counter/manifest.md │  │
-│  │  │DeskMcp │ │AppRunner   │  │   │ apps/pet/manifest.md     │  │
-│  │  │  DO    │ │  DO        │  │   │ apps/tunes/manifest.md   │  │
-│  │  └────────┘ └─┬──────────┘  │   │                           │  │
-│  │               ▼              │   │ git push installs.        │  │
-│  │     ┌──────────────────┐    │   │ git revert rolls back.    │  │
-│  │     │ Worker Loader    │    │   │ git log is the audit.     │  │
-│  │     │ (per-app isolate)│    │   └──────────────────────────┘  │
-│  │     └─────┬────────────┘    │                                   │
-│  │           ▼                  │                                   │
-│  │     ┌──────────────────┐    │                                   │
-│  │     │ DO Facets        │    │                                   │
-│  │     │ (per-app SQLite) │    │                                   │
-│  │     └──────────────────┘    │                                   │
-│  └─────────────────────────────┘                                   │
-└──────────────┬──────────────────────────────────────┬──────────────┘
-               │ HTTPS                                 │ HTTPS (MCP)
-               ▼                                       ▼
-       ┌──────────────────┐                    ┌──────────────────┐
-       │ wrist clients    │                    │ MCP-capable      │
-       │  - M5StickC      │                    │ agents           │
-       │  - browser       │                    │  - Claude        │
-       │  - (future:      │                    │  - Cursor        │
-       │     pi, watch,   │                    │  - opencode      │
-       │     etc.)        │                    │  - your script   │
-       └──────────────────┘                    └──────────────────┘
+```mermaid
+flowchart TB
+  subgraph cf["operator's Cloudflare account"]
+    direction TB
+    subgraph fabric["desk fabric Worker"]
+      direction LR
+      mcp["DeskMcp DO"]
+      runner["AppRunner DO"]
+      loader["Worker Loader"]
+      facets[("DO Facets<br/>per-app SQLite")]
+      mcp <--> runner
+      runner --> loader
+      loader --> facets
+    end
+    repo[("desk/apps<br/>Artifacts repo<br/>(git push installs)")]
+    fabric -- isomorphic-git --> repo
+  end
+
+  wrist["wrist clients<br/>M5StickC · browser · (future: pi, watch)"]
+  agents["MCP-capable agents<br/>Claude · Cursor · opencode · scripts"]
+
+  wrist -- HTTPS --> fabric
+  agents -- HTTPS /mcp --> fabric
 ```
 
 ## The four moving parts

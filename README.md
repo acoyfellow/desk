@@ -38,67 +38,30 @@ Read the [docs](./docs/index.md). Specifically:
 
 ## Architecture, in one diagram
 
-```
-agent (any MCP client)         M5StickC Plus 1.1 / browser tab
-      │                              │
-      │ POST /mcp/tools/call         │ HTTPS poll /list + /run
-      ▼                              ▼
-┌─────────────────────────────────────────────────┐
-│  desk fabric Worker                             │
-│                                                  │
-│  ┌──────────┐  ┌─────────────┐  ┌────────────┐  │
-│  │ DeskMcp  │  │  AppRunner  │  │  Worker    │  │
-│  │   DO     │←→│      DO     │  │  Loader    │  │
-│  │          │  │  (singleton)│  │ (per-app)  │  │
-│  └──────────┘  └─────────────┘  └────────────┘  │
-│         ▲                              │         │
-│         │                              ▼         │
-│         │                  ┌─────────────────┐   │
-│         │                  │  DO Facets      │   │
-│         │                  │  (per-app SQL)  │   │
-│         │                  └─────────────────┘   │
-│         │                                        │
-│         └─────── ArtifactsAppSource              │
-│                  (isomorphic-git over Artifacts) │
-└─────────────────────────────────────────────────┘
-                          │
-                          ▼
-            ┌──────────────────────────┐
-            │ desk/apps Artifacts repo │
-            │  ├ counter/manifest.md   │
-            │  ├ pet/manifest.md       │
-            │  ├ tunes/manifest.md     │
-            │  └ … (markdown + JS)     │
-            └──────────────────────────┘
-```
+```mermaid
+flowchart TB
+  agent["agent (any MCP client)"]
+  wrist["M5StickC Plus 1.1<br/>or browser tab"]
 
-## Repo layout
+  subgraph fabric["desk fabric Worker"]
+    direction LR
+    mcp["DeskMcp DO"]
+    runner["AppRunner DO<br/>(singleton)"]
+    loader["Worker Loader<br/>(per-app isolate)"]
+    facets[("DO Facets<br/>per-app SQLite")]
+    src["ArtifactsAppSource<br/>(isomorphic-git)"]
 
-```
-desk/
-├── README.md                  ← this file
-├── LICENSE                    ← MIT
-├── SECURITY.md                ← what to report and how
-├── CONTRIBUTING.md            ← rules of the road
-├── docs/                      ← Diátaxis-organized docs
-│   ├── index.md               ← start here
-│   ├── tutorials/
-│   ├── how-to/
-│   ├── reference/
-│   └── explanation/
-├── .context/                  ← agent + maintainer context
-│   ├── START-HERE.md
-│   ├── NOW.md
-│   ├── INVARIANTS.md
-│   └── DECISIONS.md
-├── experiments/               ← question-driven engineering history
-│   ├── exp-13-…/              ← THE PRODUCTION FABRIC (yes, "experiment" is a misnomer; rename pending)
-│   └── exp-NN-…/              ← graduated and parked questions
-├── device/
-│   ├── desk-rt.py             ← MicroPython runtime that ships on the M5
-│   └── playground/            ← hardware demos and primitives
-└── demos/
-    └── agent-elicit.ts        ← drive desk.ask from a script
+    mcp <--> runner
+    runner --> loader
+    loader --> facets
+    runner --> src
+  end
+
+  repo[("desk/apps<br/>Artifacts repo")]
+
+  agent -- POST /mcp --> fabric
+  wrist -- HTTPS poll<br/>/list + /run --> fabric
+  src --> repo
 ```
 
 ## License

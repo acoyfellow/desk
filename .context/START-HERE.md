@@ -3,8 +3,8 @@
 If you're an agent picking this project up, read this file first, then
 `NOW.md`, `INVARIANTS.md`, `DECISIONS.md`. If you're a human contributor
 who wants to *use* desk, the user docs at [`../docs/`](../docs/index.md)
-are organized in [Diátaxis](https://diataxis.fr/) form — start with the
-tutorial. Read this file when you want the engineering context.
+split into tutorials, how-to guides, reference, and explanation — start
+with the tutorial. Read this file when you want the engineering context.
 
 ## What desk is
 

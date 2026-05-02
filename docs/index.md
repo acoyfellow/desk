@@ -1,7 +1,6 @@
 # desk docs
 
-Documentation organized by [Diátaxis](https://diataxis.fr/):
-the kind of help you need depends on what you're doing.
+Pick the section that matches what you're trying to do.
 
 ## Tutorials
 
