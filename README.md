@@ -36,7 +36,7 @@ Read the [docs](./docs/index.md). Specifically:
 - **Already have a CF account?** [Deploy the fabric](./docs/how-to/deploy-the-fabric.md)
 - **Curious about the architecture?** [Architecture explanation](./docs/explanation/architecture.md)
 
-## Architecture, in one diagram
+## Architecture
 
 ```mermaid
 flowchart TB
