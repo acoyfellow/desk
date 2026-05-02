@@ -2,6 +2,10 @@
 
 > Your wrist as an MCP surface. Your edge as the agent's I/O.
 
+<p align="center">
+  <img src="./docs/screenshots/desk-on-m5.jpg" alt="desk running on an M5StickC Plus 1.1" width="320">
+</p>
+
 A personal, Cloudflare-hosted platform that lets any AI agent
 — Claude Desktop, Cursor, opencode, your own scripts — use
 your wrist for human-in-the-loop interaction.
