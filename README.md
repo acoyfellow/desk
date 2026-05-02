@@ -26,12 +26,6 @@ const decision = await desk.ask({
 The agent never sees the wrist. The operator never sees a
 sidebar. The wrist is the I/O channel.
 
-## Status
-
-**v0** — one operator, one device. MIT-licensed. Working
-end-to-end. Multi-device, OAuth, public app distribution, and
-the prompt→app loop are not yet shipped.
-
 ## Get started
 
 Read the [docs](./docs/index.md). Specifically:
